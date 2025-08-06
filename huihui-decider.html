@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huihui Decider - Random Decision Maker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6d9dc5;
+            --accent: #ff6b6b;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--light);
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        .logo {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.7);
+        }
+        
+        .logo i {
+            color: var(--accent);
+            margin-right: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .step {
+            display: none;
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        input, button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+        
+        input {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--accent);
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-accent {
+            background: linear-gradient(45deg, var(--accent), #ff8e8e);
+        }
+        
+        .options-container {
+            margin: 20px 0;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .option-item label {
+            min-width: 100px;
+            font-weight: 600;
+            padding: 0 15px;
+        }
+        
+        .countdown-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+        
+        .countdown-container.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .countdown-video {
+            width: 80%;
+            max-width: 700px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(255, 107, 107, 0.5);
+        }
+        
+        .countdown-video video {
+            width: 100%;
+            display: block;
+        }
+        
+        .countdown-numbers {
+            font-size: 15rem;
+            font-weight: 900;
+            color: var(--accent);
+            text-shadow: 0 0 30px rgba(255, 107, 107, 0.8);
+            animation: pulse 1s infinite;
+        }
+        
+        .result-container {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .result-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+        
+        .selected-option {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #fff;
+            background: rgba(255, 107, 107, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 3px solid var(--accent);
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            animation: highlight 2s infinite;
+        }
+        
+        .drum-animation {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 5rem;
+            color: var(--accent);
+            animation: drumBeat 0.5s infinite;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes highlight {
+            0% { box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 107, 107, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+        }
+        
+        @keyframes drumBeat {
+            0% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(5deg); }
+            75% { transform: translateX(-50%) rotate(-5deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 15px;
+            }
+            
+            .logo {
+                font-size: 2.2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .countdown-numbers {
+                font-size: 10rem;
+            }
+            
+            .selected-option {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo"><i class="fas fa-dice"></i> Huihui Decider</h1>
+            <p class="subtitle">Make random decisions with excitement</p>
+        </div>
+        
+        <div class="content">
+            <!-- Step 1: Enter number of options -->
+            <div id="step1" class="step active">
+                <div class="form-group">
+                    <label for="optionCount">Number of options:</label>
+                    <input type="number" id="optionCount" placeholder="e.g. 3" min="1" max="20">
+                </div>
+                <button id="nextStepBtn" class="btn">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
+            
+            <!-- Step 2: Enter each option -->
+            <div id="step2" class="step">
+                <div class="options-container" id="optionsContainer">
+                    <!-- Option input fields will be dynamically generated -->
+                </div>
+                <button id="makeDecisionBtn" class="btn btn-accent">Make Random Decision <i class="fas fa-random"></i></button>
+            </div>
+            
+            <!-- Step 3: Show result -->
+            <div id="step3" class="step">
+                <div class="result-container">
+                    <h2 class="result-title">Random Selection Result</h2>
+                    <p>After careful consideration...</p>
+                    <div id="selectedOption" class="selected-option">Calculating...</div>
+                    <button id="restartBtn" class="btn">Start Over <i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 www.huihuidecider.com - Making decisions fun and easy</p>
+        </div>
+    </div>
+    
+    <!-- Countdown container -->
+    <div class="countdown-container" id="countdownContainer">
+        <div class="countdown-video" id="countdownVideo">
+            <!-- Countdown video will play here -->
+            <video id="countdownVideoPlayer" style="display:none;"></video>
+            <div class="countdown-numbers" id="countdownNumbers">3</div>
+        </div>
+        <div class="drum-animation">
+            <i class="fas fa-drum"></i>
+        </div>
+    </div>
+    
+    <audio id="drumSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-drum-roll-473.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const step3 = document.getElementById('step3');
+            const optionCountInput = document.getElementById('optionCount');
+            const nextStepBtn = document.getElementById('nextStepBtn');
+            const optionsContainer = document.getElementById('optionsContainer');
+            const makeDecisionBtn = document.getElementById('makeDecisionBtn');
+            const countdownContainer = document.getElementById('countdownContainer');
+            const countdownVideoPlayer = document.getElementById('countdownVideoPlayer');
+            const countdownNumbers = document.getElementById('countdownNumbers');
+            const drumSound = document.getElementById('drumSound');
+            const selectedOption = document.getElementById('selectedOption');
+            const restartBtn = document.getElementById('restartBtn');
+            
+            let options = [];
+            
+            // Next button click event
+            nextStepBtn.addEventListener('click', function() {
+                const optionCount = parseInt(optionCountInput.value);
+                
+                if (isNaN(optionCount) || optionCount < 1 || optionCount > 20) {
+                    alert('Please enter a valid number (1-20)');
+                    return;
+                }
+                
+                // Generate option input fields
+                generateOptionInputs(optionCount);
+                
+                // Switch to step 2
+                step1.classList.remove('active');
+                step2.classList.add('active');
+            });
+            
+            // Generate option input fields
+            function generateOptionInputs(count) {
+                optionsContainer.innerHTML = '';
+                
+                for (let i = 0; i < count; i++) {
+                    const optionItem = document.createElement('div');
+                    optionItem.className = 'option-item';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = `Option ${i + 1}:`;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.placeholder = `Enter option ${i + 1}`;
+                    input.dataset.index = i;
+                    
+                    optionItem.appendChild(label);
+                    optionItem.appendChild(input);
+                    optionsContainer.appendChild(optionItem);
+                }
+            }
+            
+            // Make decision button click event
+            makeDecisionBtn.addEventListener('click', function() {
+                // Collect all options
+                const inputs = optionsContainer.querySelectorAll('input');
+                options = [];
+                
+                for (let i = 0; i < inputs.length; i++) {
+                    const value = inputs[i].value.trim();
+                    if (value) {
+                        options.push(value);
+                    }
+                }
+                
+                if (options.length < 2) {
+                    alert('Please enter at least two valid options!');
+                    return;
+                }
+                
+                // Show countdown
+                showCountdown();
+            });
+            
+            // Show countdown
+            function showCountdown() {
+                countdownContainer.classList.add('active');
+                countdownNumbers.textContent = '3';
+                
+                // Play drum sound
+                drumSound.currentTime = 0;
+                drumSound.play();
+                
+                // Start countdown animation
+                let count = 3;
+                const countdownInterval = setInterval(() => {
+                    count--;
+                    countdownNumbers.textContent = count;
+                    
+                    if (count === 0) {
+                        clearInterval(countdownInterval);
+                        
+                        // Countdown finished, show result
+                        setTimeout(() => {
+                            countdownContainer.classList.remove('active');
+                            showResult();
+                        }, 500);
+                    }
+                }, 1000);
+            }
+            
+            // Show result
+            function showResult() {
+                step2.classList.remove('active');
+                step3.classList.add('active');
+                
+                // Randomly select an option
+                const randomIndex = Math.floor(Math.random() * options.length);
+                const chosenOption = options[randomIndex];
+                
+                // Animate result display
+                let counter = 0;
+                const shuffleInterval = setInterval(() => {
+                    const tempIndex = Math.floor(Math.random() * options.length);
+                    selectedOption.textContent = options[tempIndex];
+                    counter++;
+                    
+                    if (counter > 15) {
+                        clearInterval(shuffleInterval);
+                        selectedOption.textContent = chosenOption;
+                    }
+                }, 100);
+            }
+            
+            // Restart button
+            restartBtn.addEventListener('click', function() {
+                step3.classList.remove('active');
+                step1.classList.add('active');
+                optionCountInput.value = '';
+                options = [];
+            });
+            
+            // Initialize
+            optionCountInput.focus();
+        });
+    </script>
+</body>
+</html>
