@@ -200,6 +200,7 @@
             color: var(--accent);
             text-shadow: 0 0 30px rgba(255, 107, 107, 0.8);
             animation: pulse 1s infinite;
+            display: none; /* Initially hidden */
         }
         
         .result-container {
@@ -237,6 +238,26 @@
             font-size: 5rem;
             color: var(--accent);
             animation: drumBeat 0.5s infinite;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .video-text {
+            font-size: 5rem;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,0,0,0.7);
+            z-index: 10;
         }
         
         .footer {
@@ -291,6 +312,10 @@
             .selected-option {
                 font-size: 1.8rem;
             }
+            
+            .video-text {
+                font-size: 3rem;
+            }
         }
     </style>
 </head>
@@ -338,9 +363,11 @@
     <!-- Countdown container -->
     <div class="countdown-container" id="countdownContainer">
         <div class="countdown-video" id="countdownVideo">
-            <!-- Countdown video will play here -->
-            <video id="countdownVideoPlayer" style="display:none;"></video>
-            <div class="countdown-numbers" id="countdownNumbers">3</div>
+            <!-- Video element for countdown -->
+            <video id="countdownVideoPlayer" width="100%" height="auto"></video>
+            <div class="video-overlay">
+                <div class="video-text" id="videoCountdown">3</div>
+            </div>
         </div>
         <div class="drum-animation">
             <i class="fas fa-drum"></i>
@@ -348,7 +375,7 @@
     </div>
     
     <audio id="drumSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-drum-roll-473.mp3" type="audio/mpeg">
+        <source src="drum_roll.mp3" type="audio/mpeg">
     </audio>
     
     <script>
@@ -363,12 +390,19 @@
             const makeDecisionBtn = document.getElementById('makeDecisionBtn');
             const countdownContainer = document.getElementById('countdownContainer');
             const countdownVideoPlayer = document.getElementById('countdownVideoPlayer');
-            const countdownNumbers = document.getElementById('countdownNumbers');
             const drumSound = document.getElementById('drumSound');
             const selectedOption = document.getElementById('selectedOption');
             const restartBtn = document.getElementById('restartBtn');
+            const videoCountdown = document.getElementById('videoCountdown');
             
             let options = [];
+            let audioContext;
+            let audioSource;
+            
+            // Configure video player
+            countdownVideoPlayer.loop = true;
+            countdownVideoPlayer.muted = false;
+            countdownVideoPlayer.setAttribute('playsinline', '');
             
             // Next button click event
             nextStepBtn.addEventListener('click', function() {
@@ -431,20 +465,78 @@
                 showCountdown();
             });
             
+            // Play drum sound using Web Audio API for precise timing
+            function playDrumSound(duration) {
+                try {
+                    // Create audio context
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext();
+                    
+                    // Create audio source
+                    audioSource = audioContext.createBufferSource();
+                    
+                    // Load audio file
+                    fetch('drum_roll.mp3')
+                        .then(response => response.arrayBuffer())
+                        .then(data => audioContext.decodeAudioData(data))
+                        .then(buffer => {
+                            audioSource.buffer = buffer;
+                            audioSource.connect(audioContext.destination);
+                            audioSource.start();
+                            
+                            // Stop after duration
+                            setTimeout(() => {
+                                if (audioSource) {
+                                    audioSource.stop();
+                                }
+                            }, duration * 1000);
+                        })
+                        .catch(e => {
+                            console.error('Error with audio:', e);
+                            // Fallback to HTML5 audio if Web Audio fails
+                            drumSound.currentTime = 0;
+                            drumSound.play();
+                            setTimeout(() => drumSound.pause(), duration * 1000);
+                        });
+                } catch (e) {
+                    console.error('Web Audio API not supported:', e);
+                    // Fallback to HTML5 audio
+                    drumSound.currentTime = 0;
+                    drumSound.play();
+                    setTimeout(() => drumSound.pause(), duration * 1000);
+                }
+            }
+            
             // Show countdown
             function showCountdown() {
+                // Show countdown container
                 countdownContainer.classList.add('active');
-                countdownNumbers.textContent = '3';
                 
-                // Play drum sound
-                drumSound.currentTime = 0;
-                drumSound.play();
+                // Set video source
+                countdownVideoPlayer.src = 'huihui.mp4';
                 
-                // Start countdown animation
+                // Play video with audio muted (since we're playing drum sound separately)
+                countdownVideoPlayer.muted = true;
+                
+                // Play video and sound
+                const playPromise = countdownVideoPlayer.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.error('Video play failed:', error);
+                    });
+                }
+                
+                // Start playing drum sound for exactly 3 seconds
+                playDrumSound(3);
+                
+                // Update countdown text
                 let count = 3;
+                videoCountdown.textContent = count;
+                
                 const countdownInterval = setInterval(() => {
                     count--;
-                    countdownNumbers.textContent = count;
+                    videoCountdown.textContent = count;
                     
                     if (count === 0) {
                         clearInterval(countdownInterval);
@@ -452,6 +544,12 @@
                         // Countdown finished, show result
                         setTimeout(() => {
                             countdownContainer.classList.remove('active');
+                            
+                            // Pause video and reset
+                            countdownVideoPlayer.pause();
+                            countdownVideoPlayer.currentTime = 0;
+                            
+                            // Show result
                             showResult();
                         }, 500);
                     }
